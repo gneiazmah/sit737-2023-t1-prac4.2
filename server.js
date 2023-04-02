@@ -59,6 +59,12 @@ app.get("/add", (req,res)=>{
       }
 });
 
+app.post('/profile', passport.authenticate('jwt', { session: false }),
+    function(req, res) {
+        res.send(req.user.profile);
+    }
+);
+
 var port = process.env.port || 4000;
 
 app.listen(port,()=>{
