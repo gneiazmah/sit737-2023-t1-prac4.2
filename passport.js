@@ -1,18 +1,33 @@
-const passport = require('passport');
-const LocalStrategy = require('passport-local').Strategy;
-passport.use(new LocalStrategy({
-        usernameField: 'email',
-        passwordField: 'password'
-    }, 
-    function (email, password, cb) {
-        //this one is typically a DB call. Assume that the returned user object is pre-formatted and ready for storing in JWT
-        return UserModel.findOne({email, password})
-           .then(user => {
-               if (!user) {
-                   return cb(null, false, {message: 'Incorrect email or password.'});
-               }
-               return cb(null, user, {message: 'Logged In Successfully'});
-          })
-          .catch(err => cb(err));
+const jwt = require("jsonwebtoken");
+const { JWT_SECRET } = require("../config");
+const logger = require("../logger");
+
+const verifyToken = (token) => {
+  return jwt.verify(token, JWT_SECRET).email;
+};
+
+const authMiddleware = async (req, res, next) => {
+  try {
+    const header = req.headers;
+
+    if (header && header.authorization) {
+      const authToken = header.authorization;
+
+      const email = verifyToken(authToken);
+
+      if (email) {
+        req.user = email;
+        next();
+      } else {
+        throw Error("Unauthorized User");
+      }
+    } else {
+      throw Error("Unauthorized User");
     }
-));
+  } catch (error) {
+    logger.error(error.toString());
+    res.status(401).send({ success: false, message: error.toString() });
+  }
+};
+
+module.exports = authMiddleware;

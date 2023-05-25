@@ -1,14 +1,29 @@
-const express = require('express');
-const router = express.Router();
+const jwt = require("jsonwebtoken");
+const logger = require("../../logger");
+const { JWT_SECRET } = require("../../config");
 
-/* GET users listing. */
-router.get('/', function(req, res, next) {
-  res.send('respond with a resource');
-});
+const createToken = (email) => {
+  const dataStoredInToken = {
+    email,
+  };
+  return jwt.sign(dataStoredInToken, JWT_SECRET);
+};
 
-/* GET user profile. */
-router.get('/profile', function(req, res, next) {
-    res.send(req.user);
-});
+const authController = (req, res) => {
+  try {
+    let values = req.body;
 
-module.exports = router;
+    const email = values.email;
+    const password = values.password;
+
+    logger.info('Login request from  ${email}');
+
+    const token = createToken(email);
+
+    res.status(200).send({ success: "true", data: token });
+  } catch (error) {
+    res.status(500).send({ success: "false", Error: error.toString() });
+  }
+};
+
+module.exports = authController;
